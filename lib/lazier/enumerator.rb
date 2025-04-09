@@ -19,8 +19,8 @@ class Lazier
         @next_index - 1
       end
 
-      def last_batch_keys
-        [@next_index]
+      def unused_batch_keys
+        [max_processed]
       end
 
       def next_batch_ends_at
@@ -63,7 +63,7 @@ class Lazier
         @next_batch_starts_at - 1
       end
 
-      def last_batch_keys
+      def unused_batch_keys
         ((max_processed - @batch_size)..max_processed).to_a
       end
     end
@@ -111,7 +111,7 @@ class Lazier
         if next_processors&.any?
           process(item, next_processors, next_min_processed)
         else
-          @accumulated = @accumulated.except(*this_processor.last_batch_keys)
+          @accumulated = @accumulated.except(*this_processor.unused_batch_keys)
         end
       end
     end
