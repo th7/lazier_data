@@ -1,48 +1,7 @@
 # frozen_string_literal: true
 
-class Lazier
-  class Child < Lazier
-    def initialize(parent, path)
-      @parent = parent
-      @path = path
-      @children = {}
-    end
-
-    def my_path
-      @parent.my_path + [@path]
-    end
-
-    def add(&block)
-      @parent.add(&block)
-    end
-  end
-end
-
-class Lazier
-  class ItemStore
-    ITEMS_KEY = :_lazier_items
-
-    def initialize
-      @store = new_layer
-    end
-
-    def dig(*path)
-      if path.empty?
-        @store[ITEMS_KEY]
-      else
-        @store.dig(*path)[ITEMS_KEY]
-      end
-    end
-
-    private
-
-    def new_layer
-      it = Hash.new { |hash, key| hash[key] = new_layer }
-      it[ITEMS_KEY] = []
-      it
-    end
-  end
-end
+require 'lazier/child'
+require 'lazier/item_store'
 
 class Lazier
   NOTHING = :_lazier_nothing
@@ -92,7 +51,7 @@ class Lazier
         # root_item, item_store
         passthrough = Enumerator.new do |passthrough|
 
-          # item, root_item, other_items, output_yielders
+          # item, root_item, item_store, output_yielders
           dug = Enumerator.new do |dug|
             upstream.each do |root_item, item_store|
               logger.debug { "processing #{root_item.inspect} in #{my_path.inspect}" }
