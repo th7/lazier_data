@@ -272,7 +272,7 @@ RSpec.describe Lazier do
       end.to_h
     end
 
-    it 'leads to the expected upserts' do
+    it '"upserts" the expected data' do
       expect(raw_upserted).to be_empty
       subject.go
       # the shenanigans in the test code

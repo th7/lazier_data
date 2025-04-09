@@ -42,7 +42,7 @@ class Lazier
 
     parent.add do |upstream|
       Enumerator.new do |downstream|
-        Processor.new(upstream, downstream, batch_size, output_path_parts, my_path, &block).call
+        Processor.new(upstream, downstream, batch_size, my_path, output_path_parts, &block).call
       end
     end
   end

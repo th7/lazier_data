@@ -1,85 +1,112 @@
 class Lazier
   class Processor
-    attr_reader :upstream, :downstream, :batch_size, :output_path_parts, :my_path, :block
+    attr_reader :upstream, :downstream, :batch_size, :input_path, :output_path_parts, :block
 
-    def initialize(upstream, downstream, batch_size, output_path_parts, my_path, &block)
+    def initialize(upstream, downstream, batch_size, input_path, output_path_parts, &block)
       @upstream = upstream
       @downstream = downstream
       @batch_size = batch_size
+      @input_path = input_path
       @output_path_parts = output_path_parts
-      @my_path = my_path
       @block = block
     end
 
     def call
-      # item, root_item, item_store, output_yielders
-      dug = Enumerator.new do |dug|
-        upstream.each do |root_item, item_store|
-          logger.debug { "processing #{root_item.inspect} in #{my_path.inspect}" }
-          output_yielders = output_path_parts.map do |output_path_part|
-            ::Enumerator::Yielder.new do |item|
-              storage_path = my_path + [output_path_part]
-              logger.debug { "storing item at #{storage_path}: #{item.inspect}" }
-              item_store.dig(*storage_path) << item
-            end
-          end
+      if batch_size.nil?
+        process_each
+      else
+        process_each_slice
+      end
+    end
 
-          if my_path.empty?
-            to_yield = [root_item, root_item, item_store, output_yielders]
-            logger.debug { "yielding dug root item: #{to_yield[0..1].inspect}" }
-            dug << to_yield
+    private
+
+    def dug
+      Enumerator.new do |dug|
+        upstream.each do |root_item, item_store|
+          logger.debug { "processing #{root_item.inspect} in #{input_path.inspect}" }
+          output_yielders = build_output_yielders(item_store)
+
+          if input_path.empty?
+            log_and_yield(dug, [root_item, root_item, item_store, output_yielders], :root)
           else
-            items = item_store.dig(*my_path)
-            found_count = items.count
-            logger.debug { "found #{found_count} items at #{my_path}: #{items.inspect}"}
+            items = item_store.dig(*input_path)
+            logger.debug { "found #{items.count} items at #{input_path}: #{items.inspect}"}
             if items.count == 0
-              to_yield = [root_item, item_store]
-              logger.debug { "yielding downstream (no dug items from #{my_path.inspect}): #{to_yield[0..0].inspect}" }
-              downstream << to_yield
+              log_and_yield(downstream, [root_item, item_store], :no_dug)
             elsif items.count == 1
-              to_yield = [items.first, root_item, item_store, output_yielders]
-              logger.debug { "yielding dug stored item (1 of 1) from #{my_path.inspect}: #{to_yield[0..1].inspect}" }
-              dug << to_yield
+              log_and_yield(dug, [items.first, root_item, item_store, output_yielders], :only)
             elsif items.count > 1
               items[0..-2].each.with_index(1) do |item, item_number|
-                to_yield = [item, NOTHING, item_store, output_yielders]
-                logger.debug { "yielding dug stored item (#{item_number} of #{found_count}) from #{my_path.inspect}: #{to_yield[0..1].inspect}" }
-                dug << to_yield
+                log_and_yield(dug, [item, NOTHING, item_store, output_yielders], :stored, item_number, items.count)
               end
 
-              to_yield = [items.last, root_item, item_store, output_yielders]
-              logger.debug { "yielding dug last stored item (#{found_count} of #{found_count}) from #{my_path.inspect}: #{to_yield[0..1].inspect}" }
-              dug << to_yield
+              log_and_yield(dug, [items.last, root_item, item_store, output_yielders], :last, items.count, items.count)
             else
               raise 'wat'
             end
           end
         end
       end
+    end
 
-      if batch_size.nil?
-        dug.each do |item, root_item, item_store, output_yielders|
-          to_yield = [item, *output_yielders]
-          logger.debug { "yielding item to #{block.source_location}: #{to_yield[0..0].inspect}" }
-          block.call(*to_yield)
-          to_yield = [root_item, item_store]
-          logger.debug { "yielding downstream (after item): #{to_yield[0..0].inspect}" }
-          downstream << [root_item, item_store]
-        end
-      else
-        dug.each_slice(batch_size) do |raw_yielded|
-          item_slice = raw_yielded.map(&:first)
-          to_yield = [item_slice, *raw_yielded.last[3]]
-          logger.debug { "yielding slice to #{block.source_location}: #{to_yield[0..0].inspect}" }
-          block.call(*to_yield)
-          raw_yielded.each do |_, root_item, item_store, _|
-            next if root_item == NOTHING
+    def process_each
+      dug.each do |item, root_item, item_store, output_yielders|
+        log_and_call(block, [item, *output_yielders], :item)
+        log_and_yield(downstream, [root_item, item_store], :after_item)
+      end
+    end
 
-            to_yield = [root_item, item_store]
-            logger.debug { "yielding downstream (after slice): #{to_yield[0..0].inspect}" }
-            downstream << to_yield
-          end
+    def process_each_slice
+      dug.each_slice(batch_size) do |raw_yielded|
+        item_slice = raw_yielded.map(&:first)
+        log_and_call(block, [item_slice, *raw_yielded.last[3]], :slice)
+        raw_yielded.each do |_, root_item, item_store, _|
+          next if root_item == NOTHING
+
+          log_and_yield(downstream, [root_item, item_store], :after_slice)
         end
+      end
+    end
+
+    def build_output_yielders(item_store)
+      output_path_parts.map do |output_path_part|
+        ::Enumerator::Yielder.new do |item|
+          storage_path = input_path + [output_path_part]
+          logger.debug { "storing item at #{storage_path}: #{item.inspect}" }
+          item_store.dig(*storage_path) << item
+        end
+      end
+    end
+
+    def log_and_yield(yielder, to_yield, msg_type, item_number = nil, found_count = nil)
+      logger.debug { build_log_message(msg_type, to_yield, item_number, found_count) }
+      yielder << to_yield
+    end
+
+    def log_and_call(callee, to_yield, msg_type)
+      logger.debug { build_log_message(msg_type, to_yield) }
+      callee.call(*to_yield)
+    end
+
+    def build_log_message(msg_type, to_yield, item_number = nil, found_count = nil)
+      case msg_type
+      when :root
+        "yielding dug root item: #{to_yield[0..1].inspect}"
+      when :no_dug
+        "yielding downstream (no dug items from #{input_path.inspect}): #{to_yield[0..0].inspect}"
+      when :only
+        "yielding dug stored item (1 of 1) from #{input_path.inspect}: #{to_yield[0..1].inspect}"
+      when :stored, :last_stored
+        "yielding dug stored item (#{item_number} of #{found_count}) from #{input_path.inspect}: #{to_yield[0..1].inspect}"
+      when :item
+        "yielding item to #{block.source_location}: #{to_yield[0..0].inspect}"
+      when :after_item
+        "yielding downstream (after item): #{to_yield[0..0].inspect}"
+      when :slice
+        "yielding slice to #{block.source_location}: #{to_yield[0..0].inspect}"
+      when :after_slice
+        "yielding downstream (after slice): #{to_yield[0..0].inspect}"
       end
     end
 
