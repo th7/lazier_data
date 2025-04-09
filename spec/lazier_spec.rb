@@ -52,6 +52,7 @@ RSpec.describe Lazier do
   let(:log_filter) do
     -> log do
       [
+        /.*/,
         /upserting/,
         /checking/,
         /unsaved sub part/,
@@ -170,8 +171,6 @@ RSpec.describe Lazier do
       logger.debug { "upserting #{c_sub_parts_slice.count} c_sub_parts" }
       upsert.call(:c_sub_parts, c_sub_parts_slice)
     end
-
-    subject.go
   end
 
   let(:base_inputs) do
@@ -272,7 +271,10 @@ RSpec.describe Lazier do
         [type, sorted]
       end.to_h
     end
+
     it 'leads to the expected upserts' do
+      expect(raw_upserted).to be_empty
+      subject.go
       # the shenanigans in the test code
       # which are intended to demonstrate a somewhat complex interaction
       # with normal ruby code outside the framework
