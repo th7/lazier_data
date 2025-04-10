@@ -5,8 +5,6 @@ require 'lazier/item_store'
 require 'lazier/processor'
 
 class Lazier
-  NOTHING = :_lazier_nothing
-
   class << self
     attr_writer :logger
 

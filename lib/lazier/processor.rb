@@ -1,5 +1,7 @@
 class Lazier
   class Processor
+    NOTHING = :_lazier_nothing
+
     attr_reader :upstream, :downstream, :batch_size, :input_path, :output_path_parts, :block
 
     def initialize(upstream, downstream, batch_size, input_path, output_path_parts, &block)
