@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = <<~DESCRIPTION
     Allows setting up data processing that works intuitively, but behind the secenes processes lazily.
   DESCRIPTION
-  spec.homepage = 'https://github.com/th7/lazier'
+  spec.homepage = 'https://github.com/th7/lazier_data'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
 
