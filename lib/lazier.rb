@@ -9,13 +9,18 @@ class Lazier
     attr_writer :logger
 
     def logger
-      @logger ||= init_logger
+      @logger ||= null_logger
     end
 
     private
 
-    def init_logger
-      OpenStruct.new
+    def null_logger
+      Class.new do
+        class << self
+          def method_missing(m, *args, **kwargs, &block)
+          end
+        end
+      end
     end
   end
 

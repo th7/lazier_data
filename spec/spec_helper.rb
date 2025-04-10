@@ -1,5 +1,7 @@
 # frozen_string_literal: true
-
+require 'warning'
+Warning.ignore(%r{/lib/semantic_logger/base\.rb:412})
+Warning.ignore(%r{/lib/semantic_logger/levels\.rb:1})
 require 'semantic_logger'
 
 SemanticLogger.add_appender(io: $stderr)

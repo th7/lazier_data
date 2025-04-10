@@ -47,6 +47,11 @@ RSpec.describe Lazier::SpecData do
       context 'adding repeats' do
         before { described_instance.repeats(2) }
         it { is_expected.to eq([{ type: :new_type }, { type: :new_type }]) }
+
+        it 'does not cause the same objects to be reused' do
+          object_ids = subject.map(&:object_id)
+          expect(object_ids.uniq.count).to eq(object_ids.count)
+        end
       end
     end
   end
@@ -130,7 +135,57 @@ RSpec.describe Lazier::SpecData do
   end
 
   describe '#items_not_upserted' do
+    subject { described_instance.items_not_upserted }
+    let(:upserted_items) { described_instance.inputs[0..1] }
 
+    context 'basic items' do
+      before { described_instance.upsert(:a, upserted_items) }
+      it { is_expected.to eq([{ type: :c }]) }
+    end
+
+    context 'with sub parts' do
+      before do
+        described_instance.sub_parts(:sub_part)
+        described_instance.upsert(:a, upserted_items)
+      end
+      it 'also returns sub parts' do
+        expect(subject).to eq(
+          [
+            { type: :sub_part },
+            { type: :sub_part },
+            { type: :c, sub_parts: [{ type: :sub_part }] },
+            { type: :sub_part },
+          ]
+        )
+      end
+    end
+
+    context 'inputs have not been generated' do
+      it 'ensures inputs have been generated' do
+        expect(subject).to eq([{ type: :a }, { type: :b }, { type: :c }])
+      end
+    end
+  end
+
+  describe '#all_items_count' do
+    subject { described_instance.all_items_count }
+    it { is_expected.to eq(3) }
+
+    context 'with sub parts' do
+      before { described_instance.sub_parts(:sub_part) }
+      it { is_expected.to eq(6) }
+    end
+  end
+
+  describe '#new' do
+    subject { described_instance.new(some: :data) }
+    it { is_expected.to eq(some: :data) }
+
+    it 'treats the item as not upserted' do
+      expect(described_instance.upserted?(subject)).to be false
+      non_inputs = described_instance.items_not_upserted - described_instance.inputs
+      expect(non_inputs).to eq([{ some: :data }])
+    end
   end
 
   describe Lazier::SpecData::Item do

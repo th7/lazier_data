@@ -1,4 +1,3 @@
-require 'ostruct'
 require 'securerandom'
 
 class Lazier
@@ -21,12 +20,12 @@ class Lazier
         if other.is_a?(Hash)
           @attrs == other
         elsif other.is_a?(self.class)
-          @attrs == other.instance_variable_get(:@attrs)
+          object_id == other.object_id
         end
       end
 
       def inspect
-        "#<#{self.class} #{@attrs}>"
+        @attrs.inspect
       end
 
       protected
@@ -62,6 +61,7 @@ class Lazier
 
     def initialize
       @upserted_counts = Hash.new { |hash, key| hash[key] = 0 }
+      @all_items = []
     end
 
     def types(*type_list)
@@ -122,6 +122,22 @@ class Lazier
       @upserted_counts[item.object_id]
     end
 
+    def items_not_upserted
+      inputs # ensure generated
+      @all_items.reject { |item| upserted?(item) }
+    end
+
+    def all_items_count
+      inputs # ensure generated
+      @all_items.count
+    end
+
+    def new(**attrs)
+      item = Item.new(self, **attrs)
+      @all_items << item
+      item
+    end
+
     private
 
     def add(&block)
@@ -141,21 +157,25 @@ class Lazier
     end
 
     def generate_inputs
-      type_list.map(&generate_item).cycle(repeats_count).to_a
+      inputs = []
+      repeats_count.times do
+        inputs += type_list.map(&generate_item)
+      end
+      inputs
     end
 
     def generate_item
       -> (type) do
-        base = Item.new(self, type:)
+        item = new(type:)
         unless sub_parts_list.empty?
-          base[:sub_parts] = sub_parts_list.map(&generate_sub_part)
+          item[:sub_parts] = sub_parts_list.map(&generate_sub_part)
         end
-        base
+        item
       end
     end
 
     def generate_sub_part
-      -> (type) { Item.new(self, type:) }
+      -> (type) { new(type:) }
     end
 
     def assert_not_generated!
