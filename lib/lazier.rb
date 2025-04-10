@@ -17,7 +17,11 @@ class Lazier
     def null_logger
       Class.new do
         class << self
-          def method_missing(m, *args, **kwargs, &); end
+          def method_missing(*, **, &); end
+
+          def respond_to_missing?
+            true
+          end
         end
       end
     end
@@ -30,16 +34,7 @@ class Lazier
   end
 
   def enum_slice(batch_size, &block)
-    output_path_parts = block.parameters[1..].map do |_type, name|
-      name
-    end
-
-    full_output_paths = output_path_parts.map do |path_part|
-      my_path + [path_part]
-    end
-    logger.debug do
-      "setting up processor with batch_size: #{batch_size.inspect}, outputs: #{full_output_paths} for #{block.source_location}"
-    end
+    output_path_parts = block.parameters[1..].map(&:last)
 
     output_path_parts.each do |output_path_part|
       @children[output_path_part] = Child.new(self, output_path_part)
@@ -78,7 +73,7 @@ class Lazier
     processors = @processor_builders.map do |processor_builder|
       upstream = processor_builder.call(upstream)
     end
-    processors.last.each {}
+    processors.last.each {} # rubocop:disable Lint/EmptyBlock
   end
 
   def go_stepwise

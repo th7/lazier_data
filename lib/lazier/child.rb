@@ -2,7 +2,7 @@
 
 class Lazier
   class Child < Lazier
-    def initialize(parent, path)
+    def initialize(parent, path) # rubocop:disable Lint/MissingSuper
       @parent = parent
       @path = path
       @children = {}

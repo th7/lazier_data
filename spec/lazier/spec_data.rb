@@ -1,66 +1,12 @@
 # frozen_string_literal: true
 
-require 'securerandom'
+require 'lazier/spec_data/item'
 
 class Lazier
   class SpecData
-    class Item
-      def initialize(created_by, **attrs)
-        @created_by = created_by
-        @attrs = attrs
-      end
-
-      def [](key)
-        @attrs[key]
-      end
-
-      def []=(key, value)
-        @attrs[key] = value
-      end
-
-      def ==(other)
-        if other.is_a?(Hash)
-          @attrs == other
-        elsif other.is_a?(self.class)
-          object_id == other.object_id
-        end
-      end
-
-      def inspect
-        @attrs.inspect
-      end
-
-      protected
-
-      def upserted?; end
-
-      private
-
-      def method_missing(m, *args)
-        ms = m.to_s
-        if ms.end_with?('=')
-          raise 'Multiple arguments passed to setter' if args.count > 1
-
-          m_base = ms.sub('=', '').to_sym
-          @attrs[m_base] = args.first
-        else
-          @attrs[m]
-        end
-      end
-    end
-  end
-end
-
-class Lazier
-  class SpecData
-    class << self
-      # def types(type_list=[:a, :b, :c])
-      #   new(type_list:)
-      # end
-    end
-
     def initialize
       @upserted_counts = Hash.new { |hash, key| hash[key] = 0 }
+      @upserted_counts.compare_by_identity
       @all_items = []
     end
 
@@ -86,26 +32,10 @@ class Lazier
       @inputs ||= generate_inputs
     end
 
-    def record(data)
-      caller_location = caller_locations[0]
-      recorded << {
-        caller: {
-          path: caller_location.path,
-          label: caller_location.label,
-          lineno: caller_location.lineno
-        },
-        data:
-      }
-    end
-
-    def recorded
-      @recorded ||= []
-    end
-
     def upsert(label, items)
       upserted[label] << items
       items.map do |item|
-        @upserted_counts[item.object_id] += 1
+        @upserted_counts[item] += 1
         next_id(label)
       end
     end
@@ -115,11 +45,11 @@ class Lazier
     end
 
     def upserted?(item)
-      @upserted_counts.include?(item.object_id)
+      @upserted_counts.include?(item)
     end
 
     def upserted_count(item)
-      @upserted_counts[item.object_id]
+      @upserted_counts[item]
     end
 
     def items_not_upserted

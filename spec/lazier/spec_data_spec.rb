@@ -22,12 +22,7 @@ RSpec.describe Lazier::SpecData do
       end
 
       it { is_expected.to eq(expected) }
-
-      it 'returns an array of SpecData::Item' do
-        subject.each do |item|
-          expect(item).to be_a(described_class::Item)
-        end
-      end
+      it { is_expected.to all be_a(described_class::Item) }
     end
 
     context 'setting one type' do
@@ -35,27 +30,29 @@ RSpec.describe Lazier::SpecData do
 
       it { is_expected.to eq([{ type: :new_type }]) }
 
-      context 'adding a sub part' do
+      context 'adding a sub part' do # rubocop:disable RSpec/NestedGroups
+        let(:inputs) { subject }
+
         before { described_instance.sub_parts(:sub_part) }
 
         it { is_expected.to eq([{ type: :new_type, sub_parts: [{ type: :sub_part }] }]) }
 
         it 'returns an array of SpecData::Item' do
-          subject.each do |item|
-            item.sub_parts.each do |sub_part|
-              expect(sub_part).to be_a(described_class::Item)
-            end
+          inputs.each do |item|
+            expect(item.sub_parts).to all be_a(described_class::Item)
           end
         end
       end
 
-      context 'adding repeats' do
+      context 'adding repeats' do # rubocop:disable RSpec/NestedGroups
+        let(:inputs) { subject }
+
         before { described_instance.repeats(2) }
 
         it { is_expected.to eq([{ type: :new_type }, { type: :new_type }]) }
 
         it 'does not cause the same objects to be reused' do
-          object_ids = subject.map(&:object_id)
+          object_ids = inputs.map(&:object_id)
           expect(object_ids.uniq.count).to eq(object_ids.count)
         end
       end
@@ -66,9 +63,7 @@ RSpec.describe Lazier::SpecData do
     describe "##{m} (common behavior)" do
       subject { described_instance.public_send(m, :anything) }
 
-      it 'is chainable (returns self)' do
-        expect(subject).to eq(described_instance)
-      end
+      it { is_expected.to eq(described_instance) }
 
       context 'calling after inputs have been generated' do
         before { described_instance.inputs }
@@ -80,21 +75,8 @@ RSpec.describe Lazier::SpecData do
     end
   end
 
-  describe '#record' do
-    it 'tracks given data' do
-      described_instance.record(:data)
-      expect(described_instance.recorded.count).to eq(1)
-      recorded = described_instance.recorded.first
-      expect(recorded[:data]).to eq(:data)
-      caller_data = recorded[:caller]
-      expect(caller_data[:label]).to match(/block \(\d levels\) in <top \(required\)>/)
-      expect(caller_data[:lineno]).to be_within(500).of(501)
-      expect(caller_data[:path]).to match(%r{spec/lazier/spec_data_spec\.rb\z})
-    end
-  end
-
   describe '#upsert' do
-    it 'returns ids and remembers items' do
+    it 'returns ids and remembers items' do # rubocop:disable RSpec/MultipleExpectations
       expect(described_instance.upsert(:a, %i[fake items])).to eq([1, 2])
       expect(described_instance.upsert(:a, %i[more items])).to eq([3, 4])
       expect(described_instance.upsert(:b, [:item])).to eq([1])
@@ -112,7 +94,7 @@ RSpec.describe Lazier::SpecData do
 
       it { is_expected.to be true }
 
-      context 'repeatedly' do
+      context 'repeatedly' do # rubocop:disable RSpec/NestedGroups
         before { described_instance.upsert(:a, [item]) }
 
         it { is_expected.to be true }
@@ -134,7 +116,7 @@ RSpec.describe Lazier::SpecData do
 
       it { is_expected.to eq(1) }
 
-      context 'repeatedly' do
+      context 'repeatedly' do # rubocop:disable RSpec/NestedGroups
         before { described_instance.upsert(:a, [item]) }
 
         it { is_expected.to eq(2) }
@@ -148,6 +130,8 @@ RSpec.describe Lazier::SpecData do
 
   describe '#items_not_upserted' do
     subject { described_instance.items_not_upserted }
+
+    let(:items_not_upserted) { subject }
 
     let(:upserted_items) { described_instance.inputs[0..1] }
 
@@ -163,8 +147,8 @@ RSpec.describe Lazier::SpecData do
         described_instance.upsert(:a, upserted_items)
       end
 
-      it 'also returns sub parts' do
-        expect(subject).to eq(
+      it 'also returns sub parts' do # rubocop:disable RSpec/ExampleLength
+        expect(items_not_upserted).to eq(
           [
             { type: :sub_part },
             { type: :sub_part },
@@ -177,7 +161,7 @@ RSpec.describe Lazier::SpecData do
 
     context 'inputs have not been generated' do
       it 'ensures inputs have been generated' do
-        expect(subject).to eq([{ type: :a }, { type: :b }, { type: :c }])
+        expect(items_not_upserted).to eq([{ type: :a }, { type: :b }, { type: :c }])
       end
     end
   end
@@ -197,10 +181,12 @@ RSpec.describe Lazier::SpecData do
   describe '#new' do
     subject { described_instance.new(some: :data) }
 
+    let(:new_data) { subject }
+
     it { is_expected.to eq(some: :data) }
 
-    it 'treats the item as not upserted' do
-      expect(described_instance.upserted?(subject)).to be false
+    it 'treats the item as not upserted' do # rubocop:disable RSpec/MultipleExpectations
+      expect(described_instance.upserted?(new_data)).to be false
       non_inputs = described_instance.items_not_upserted - described_instance.inputs
       expect(non_inputs).to eq([{ some: :data }])
     end

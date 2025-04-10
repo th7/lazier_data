@@ -25,17 +25,15 @@ class Lazier
 
     private
 
-    def dug
+    def dug # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
       Enumerator.new do |dug|
         upstream.each do |root_item, item_store|
-          logger.debug { "processing #{root_item.inspect} in #{input_path.inspect}" }
           output_yielders = build_output_yielders(item_store)
 
           if input_path.empty?
             log_and_yield(dug, [root_item, root_item, item_store, output_yielders], :root)
           else
             items = item_store.dig(*input_path)
-            logger.debug { "found #{items.count} items at #{input_path}: #{items.inspect}" }
             if items.count.zero?
               log_and_yield(downstream, [root_item, item_store], :no_dug)
             elsif items.count == 1
@@ -93,7 +91,7 @@ class Lazier
       callee.call(*to_yield)
     end
 
-    def build_log_message(msg_type, to_yield, item_number = nil, found_count = nil)
+    def build_log_message(msg_type, to_yield, item_number = nil, found_count = nil) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity
       case msg_type
       when :root
         "yielding dug root item: #{to_yield[0..1].inspect}"
@@ -102,7 +100,8 @@ class Lazier
       when :only
         "yielding dug stored item (1 of 1) from #{input_path.inspect}: #{to_yield[0..1].inspect}"
       when :stored, :last_stored
-        "yielding dug stored item (#{item_number} of #{found_count}) from #{input_path.inspect}: #{to_yield[0..1].inspect}"
+        "yielding dug stored item (#{item_number} of #{found_count}) " \
+        "from #{input_path.inspect}: #{to_yield[0..1].inspect}"
       when :item
         "yielding item to #{block.source_location}: #{to_yield[0..0].inspect}"
       when :after_item
