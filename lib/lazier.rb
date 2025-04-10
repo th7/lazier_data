@@ -17,28 +17,29 @@ class Lazier
     def null_logger
       Class.new do
         class << self
-          def method_missing(m, *args, **kwargs, &block)
-          end
+          def method_missing(m, *args, **kwargs, &); end
         end
       end
     end
   end
 
   def initialize(inputs)
-    @initial_processor_builder = Proc.new { root_processor(inputs) }
+    @initial_processor_builder = proc { root_processor(inputs) }
     @processor_builders = []
     @children = {}
   end
 
   def enum_slice(batch_size, &block)
-    output_path_parts = block.parameters[1..-1].map do |_type, name|
+    output_path_parts = block.parameters[1..].map do |_type, name|
       name
     end
 
     full_output_paths = output_path_parts.map do |path_part|
       my_path + [path_part]
     end
-    logger.debug { "setting up processor with batch_size: #{batch_size.inspect}, outputs: #{full_output_paths} for #{block.source_location}"}
+    logger.debug do
+      "setting up processor with batch_size: #{batch_size.inspect}, outputs: #{full_output_paths} for #{block.source_location}"
+    end
 
     output_path_parts.each do |output_path_part|
       @children[output_path_part] = Child.new(self, output_path_part)
@@ -51,16 +52,16 @@ class Lazier
     end
   end
 
-  def enum(&block)
-    enum_slice(nil, &block)
+  def enum(&)
+    enum_slice(nil, &)
   end
 
-  def split(&block)
-    enum(&block)
+  def split(&)
+    enum(&)
   end
 
-  def each_slice(batch_size, &block)
-    enum_slice(batch_size, &block)
+  def each_slice(batch_size, &)
+    enum_slice(batch_size, &)
   end
 
   def [](path_part)

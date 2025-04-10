@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Lazier
   class ItemStore
     ITEMS_KEY = :_lazier_items

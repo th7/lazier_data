@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-
 require 'lazier'
 require 'lazier/spec_data'
 
 RSpec.describe Lazier do
-  subject { Lazier.new(lazy_inputs) }
+  subject { described_class.new(lazy_inputs) }
+
   let(:spec_data) { Lazier::SpecData.new }
   let(:inputs) { spec_data.inputs }
   let(:lazy_inputs) do
@@ -17,12 +17,12 @@ RSpec.describe Lazier do
   let(:logger) { SemanticLogger['LazierSpec'] }
   let(:log_level) { :warn }
   let(:log_filter) do
-    -> log do
+    lambda do |log|
       [
         /.*/,
         /upserting/,
         /checking/,
-        /unsaved sub part/,
+        /unsaved sub part/
         # /external_id:/,
         # /items at/,
       ].any? { |matcher| log.message =~ matcher }
@@ -30,11 +30,11 @@ RSpec.describe Lazier do
   end
 
   before do
-    Lazier.logger = SemanticLogger['Lazier']
+    described_class.logger = SemanticLogger['Lazier']
     logger.level = log_level
-    Lazier.logger.level = log_level
+    described_class.logger.level = log_level
     logger.filter = log_filter
-    Lazier.logger.filter = log_filter
+    described_class.logger.filter = log_filter
   end
 
   context 'simple data processing' do
@@ -151,6 +151,7 @@ RSpec.describe Lazier do
 
   context 'splitting, treating sub parts as many-to-many, more data, in uneven batch sizes' do
     let(:repeats) { 100 }
+
     before do
       spec_data.repeats(repeats)
       spec_data.sub_parts(:sub_part_a, :sub_part_b, :sub_part_c)
@@ -173,18 +174,18 @@ RSpec.describe Lazier do
       end
 
       def upsert_to(target)
-        -> (items) do
+        lambda do |items|
           spec_data.upsert(target, items).zip(items) do |id, item|
             item.id = id
           end
         end
       end
 
-      [:a_items, :b_items, :c_items, :sub_parts].each.with_index(2) do |item_type, batch_size|
+      %i[a_items b_items c_items sub_parts].each.with_index(2) do |item_type, batch_size|
         subject[item_type].each_slice(batch_size, &upsert_to(item_type))
       end
 
-      [:a_items, :b_items, :c_items].each do |item_type|
+      %i[a_items b_items c_items].each do |item_type|
         subject[item_type].enum do |item, item_sub_parts|
           item.sub_parts.each do |sub_part|
             item_sub_parts << spec_data.new(item_id: item.id, sub_part_id: sub_part.id)

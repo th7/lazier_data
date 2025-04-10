@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'securerandom'
 
 class Lazier
@@ -30,9 +32,7 @@ class Lazier
 
       protected
 
-      def upserted?
-
-      end
+      def upserted?; end
 
       private
 
@@ -92,7 +92,7 @@ class Lazier
         caller: {
           path: caller_location.path,
           label: caller_location.label,
-          lineno: caller_location.lineno,
+          lineno: caller_location.lineno
         },
         data:
       }
@@ -145,7 +145,7 @@ class Lazier
     end
 
     def type_list
-      @type_list ||= [:a, :b, :c]
+      @type_list ||= %i[a b c]
     end
 
     def sub_parts_list
@@ -165,17 +165,15 @@ class Lazier
     end
 
     def generate_item
-      -> (type) do
+      lambda do |type|
         item = new(type:)
-        unless sub_parts_list.empty?
-          item[:sub_parts] = sub_parts_list.map(&generate_sub_part)
-        end
+        item[:sub_parts] = sub_parts_list.map(&generate_sub_part) unless sub_parts_list.empty?
         item
       end
     end
 
     def generate_sub_part
-      -> (type) { new(type:) }
+      ->(type) { new(type:) }
     end
 
     def assert_not_generated!

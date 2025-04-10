@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Lazier
   class Processor
     NOTHING = :_lazier_nothing
@@ -33,8 +35,8 @@ class Lazier
             log_and_yield(dug, [root_item, root_item, item_store, output_yielders], :root)
           else
             items = item_store.dig(*input_path)
-            logger.debug { "found #{items.count} items at #{input_path}: #{items.inspect}"}
-            if items.count == 0
+            logger.debug { "found #{items.count} items at #{input_path}: #{items.inspect}" }
+            if items.count.zero?
               log_and_yield(downstream, [root_item, item_store], :no_dug)
             elsif items.count == 1
               log_and_yield(dug, [items.first, root_item, item_store, output_yielders], :only)

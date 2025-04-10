@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Lazier
   class Child < Lazier
     def initialize(parent, path)
@@ -10,8 +12,8 @@ class Lazier
       @parent.my_path + [@path]
     end
 
-    def add(&block)
-      @parent.add(&block)
+    def add(&)
+      @parent.add(&)
     end
   end
 end

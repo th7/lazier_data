@@ -12,14 +12,14 @@ Gem::Specification.new do |spec|
   spec.description = <<~DESCRIPTION
     Allows setting up data processing that works intuitively, but behind the secenes processes lazily.
   DESCRIPTION
-  spec.homepage = "https://github.com/th7/lazier"
+  spec.homepage = 'https://github.com/th7/lazier'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
 
   spec.metadata['allowed_push_host'] = "TODO: Set to your gem server 'https://example.com'"
 
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = "https://github.com/th7/lazier"
+  spec.metadata['source_code_uri'] = 'https://github.com/th7/lazier'
   # spec.metadata['changelog_uri'] = "TODO: Put your gem's CHANGELOG.md URL here."
   spec.metadata['rubygems_mfa_required'] = 'true'
 
