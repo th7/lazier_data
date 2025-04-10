@@ -20,7 +20,8 @@ class Lazier
   end
 
   def initialize(inputs)
-    @processors = [root_processor(inputs)]
+    @initial_processor_builder = Proc.new { root_processor(inputs) }
+    @processor_builders = []
     @children = {}
   end
 
@@ -67,7 +68,23 @@ class Lazier
 
   def go
     logger.info { 'initiating processing' }
-    @processors.last.each {}
+    upstream = @initial_processor_builder.call
+    processors = @processor_builders.map do |processor_builder|
+      upstream = processor_builder.call(upstream)
+    end
+    processors.last.each {}
+  end
+
+  def go_stepwise
+    logger.info { 'initiating stepwise processing' }
+    stepwise_results = []
+    results = @initial_processor_builder.call.to_a
+    stepwise_results << results
+    @processor_builders.each do |processor_builder|
+      results = processor_builder.call(results).to_a
+      stepwise_results << results
+    end
+    stepwise_results
   end
 
   protected
@@ -77,7 +94,7 @@ class Lazier
   end
 
   def add(&block)
-    @processors << block.call(@processors.last)
+    @processor_builders << block
   end
 
   private

@@ -354,16 +354,28 @@ RSpec.describe Lazier do
       it '"upserts" the expected data' do
         expect(raw_upserted).to be_empty
         subject.go
-        # the shenanigans in the test code
+        # the shenanigans in the test processor setup
         # which are intended to demonstrate a somewhat complex interaction
         # with normal ruby code outside the framework
-        # somewhat reduce this number
-        # though not actually all that much
+        # somewhat reduce the number of sub_parts upserts
         expect(upserted[:sub_parts].count).to eq(20)
-        # we're still just going to check that each expected sub_part upsert
-        # happened at least once
+        # we're still only really going to check
+        # that each expected sub_part upsert happened at least once
         upserted[:sub_parts].uniq!
         expect(upserted).to eq(expected_upserts)
+      end
+
+      it '"upserts" the expected data in stepwise mode' do
+        expect(raw_upserted).to be_empty
+        results = subject.go_stepwise
+        # the shenanigans in the test processor setup
+        # do not reduce sub_parts upserts when running stepwise
+        # because in this mode we fully process each step
+        # before moving on
+        expect(upserted[:sub_parts].count).to eq(48 * reps)
+        upserted[:sub_parts].uniq!
+        expect(upserted).to eq(expected_upserts)
+        # expect(results).to eq('asdf')
       end
     end
   end
