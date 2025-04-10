@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-class Lazier
+class LazierData
   class Processor
-    NOTHING = :_lazier_nothing
+    NOTHING = :_lazier_data_nothing
 
     attr_reader :upstream, :downstream, :batch_size, :input_path, :output_path_parts, :block
 
@@ -114,7 +114,7 @@ class Lazier
     end
 
     def logger
-      Lazier.logger
+      LazierData.logger
     end
   end
 end

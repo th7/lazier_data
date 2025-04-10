@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-class Lazier
+class LazierData
   class ItemStore
-    ITEMS_KEY = :_lazier_items
+    ITEMS_KEY = :_lazier_data_items
 
     def initialize
       @store = new_layer

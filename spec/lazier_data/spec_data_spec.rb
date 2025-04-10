@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require 'lazier/spec_data'
+require 'lazier_data/spec_data'
 
 # yes, this is a meta spec
 # having a good utility to produce inputs
-# and most importantly corresponding expected outputs
+# and most importantly enable reasonable expectations on on outputs
 # is really useful
-RSpec.describe Lazier::SpecData do
+RSpec.describe LazierData::SpecData do
   let(:described_instance) { described_class.new }
 
   describe '#inputs' do

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Lazier
+class LazierData
   class SpecData
     class Item
       def initialize(created_by, **attrs)

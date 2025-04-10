@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-class Lazier
-  class Child < Lazier
+class LazierData
+  class Child < LazierData
     def initialize(parent, path) # rubocop:disable Lint/MissingSuper
       @parent = parent
       @path = path

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'lazier/child'
-require 'lazier/item_store'
-require 'lazier/processor'
+require 'lazier_data/child'
+require 'lazier_data/item_store'
+require 'lazier_data/processor'
 
-class Lazier
+class LazierData
   class << self
     attr_writer :logger
 
@@ -64,7 +64,7 @@ class Lazier
   end
 
   def logger
-    Lazier.logger
+    LazierData.logger
   end
 
   def go

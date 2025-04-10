@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'lazier/spec_data/item'
+require 'lazier_data/spec_data/item'
 
-class Lazier
+class LazierData
   class SpecData
     def initialize
       @upserted_counts = Hash.new { |hash, key| hash[key] = 0 }

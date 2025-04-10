@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'lib/lazier/version'
+require_relative 'lib/lazier_data/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'lazier'
-  spec.version = Lazier::VERSION
+  spec.name = 'lazier_data'
+  spec.version = LazierData::VERSION
   spec.authors = ['Tyler Hartland']
   spec.email = ['tylerhartland7@gmail.com']
 
