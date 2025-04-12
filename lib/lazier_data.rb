@@ -32,7 +32,7 @@ class LazierData
   end
 
   def initialize(inputs)
-    @initial_processor_builder = proc { root_processor(inputs) }
+    @initial_processor_builder = proc { Processor.root(inputs) }
     @processor_builders = []
     @children = {}
   end
@@ -45,7 +45,7 @@ class LazierData
     end
 
     parent.add do |upstream|
-      build_processor(upstream, batch_size, &block)
+      Processor.new(upstream, batch_size, my_path, &block).call
     end
   end
 
@@ -101,40 +101,6 @@ class LazierData
   end
 
   private
-
-  def root_processor(inputs)
-    Enumerator.new do |y|
-      inputs.each do |item|
-        y << [item, ItemStore.new]
-      end
-    end
-  end
-
-  def build_processor(upstream, batch_size, &)
-    Enumerator.new do |downstream|
-      if batch_size.nil?
-        build_each_processor(upstream, downstream, &)
-      else
-        build_each_slice_processor(upstream, downstream, batch_size, &)
-      end
-    end
-  end
-
-  def build_each_processor(upstream, downstream, &)
-    if my_path.empty?
-      Processor::RootEach.new(upstream, downstream, &).call
-    else
-      Processor::ChildEach.new(upstream, downstream, my_path, &).call
-    end
-  end
-
-  def build_each_slice_processor(upstream, downstream, batch_size, &)
-    if my_path.empty?
-      Processor::RootEachSlice.new(upstream, downstream, batch_size, &).call
-    else
-      Processor::ChildEachSlice.new(upstream, downstream, batch_size, my_path, &).call
-    end
-  end
 
   def parent
     self
