@@ -30,24 +30,32 @@ class LazierData
 
       private
 
-      def slicer # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      def slicer
         Enumerator.new do |slicer|
           upstream.each do |root_item, item_store|
-            output_yielders = build_output_yielders(item_store)
-            items = item_store.dig(*input_path)
-            if items.count.zero?
-              downstream << [root_item, item_store]
-            elsif items.count == 1
-              slicer << [items.first, root_item, item_store, output_yielders]
-            elsif items.count > 1
-              items[0..-2].each do |item|
-                slicer << [item, NOTHING, item_store, output_yielders]
-              end
-
-              slicer << [items.last, root_item, item_store, output_yielders]
-            end
+            yield_items(slicer, root_item, item_store)
           end
         end
+      end
+
+      def yield_items(slicer, root_item, item_store)
+        output_yielders = build_output_yielders(item_store)
+        items = item_store.dig(*input_path)
+        if items.count.zero?
+          downstream << [root_item, item_store]
+        elsif items.count == 1
+          slicer << [items.first, root_item, item_store, output_yielders]
+        elsif items.count > 1
+          yield_multiple(slicer, items, root_item, item_store, output_yielders)
+        end
+      end
+
+      def yield_multiple(slicer, items, root_item, item_store, output_yielders)
+        items[0..-2].each do |item|
+          slicer << [item, NOTHING, item_store, output_yielders]
+        end
+
+        slicer << [items.last, root_item, item_store, output_yielders]
       end
 
       def output_path_parts
