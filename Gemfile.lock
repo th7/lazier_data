@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    lazier_data (0.1.0)
+    lazier_data (0.1.2.pre.wip)
 
 GEM
   remote: https://rubygems.org/

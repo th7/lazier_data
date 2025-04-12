@@ -3,6 +3,9 @@
 require 'lazier_data/child'
 require 'lazier_data/item_store'
 require 'lazier_data/processor'
+require 'lazier_data/processor/root_each'
+require 'lazier_data/processor/root_each_slice'
+require 'lazier_data/processor/child_each'
 
 class LazierData
   class << self
@@ -42,7 +45,15 @@ class LazierData
 
     parent.add do |upstream|
       Enumerator.new do |downstream|
-        Processor.new(upstream, downstream, batch_size, my_path, output_path_parts, &block).call
+        if my_path.empty? && batch_size.nil?
+          Processor::RootEach.new(upstream, downstream, &block).call
+        elsif my_path.empty? && !batch_size.nil?
+          Processor::RootEachSlice.new(upstream, downstream, batch_size, &block).call
+        elsif !my_path.empty? && batch_size.nil?
+          Processor::ChildEach.new(upstream, downstream, my_path, &block).call
+        else
+          Processor.new(upstream, downstream, batch_size, my_path, output_path_parts, &block).call
+        end
       end
     end
   end
