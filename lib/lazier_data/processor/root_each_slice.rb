@@ -42,14 +42,9 @@ class LazierData
       def build_output_yielders(item_store)
         output_path_parts.map do |output_path_part|
           ::Enumerator::Yielder.new do |item|
-            logger.debug { "storing item at #{storage_path}: #{item.inspect}" }
             item_store[output_path_part] << item
           end
         end
-      end
-
-      def logger
-        LazierData.logger
       end
     end
   end

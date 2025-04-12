@@ -9,28 +9,6 @@ require 'lazier_data/processor/child_each'
 require 'lazier_data/processor/child_each_slice'
 
 class LazierData
-  class << self
-    attr_writer :logger
-
-    def logger
-      @logger ||= null_logger
-    end
-
-    private
-
-    def null_logger
-      Class.new do
-        class << self
-          def method_missing(*, **, &); end
-
-          def respond_to_missing?
-            true
-          end
-        end
-      end
-    end
-  end
-
   def initialize(inputs)
     @initial_processor_builder = proc { Processor.root(inputs) }
     @processor_builders = []
@@ -65,12 +43,7 @@ class LazierData
     @children.fetch(path_part)
   end
 
-  def logger
-    LazierData.logger
-  end
-
   def go
-    logger.info { 'initiating processing' }
     upstream = @initial_processor_builder.call
     processors = @processor_builders.map do |processor_builder|
       upstream = processor_builder.call(upstream)
@@ -79,7 +52,6 @@ class LazierData
   end
 
   def go_stepwise
-    logger.info { 'initiating stepwise processing' }
     stepwise_results = []
     results = @initial_processor_builder.call.to_a
     stepwise_results << results

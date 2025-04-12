@@ -13,21 +13,6 @@ RSpec.describe LazierData do
 
   let(:spec_data) { LazierData::SpecData.new }
 
-  before do
-    described_class.logger = SemanticLogger['LazierData']
-    described_class.logger.level = :warn
-    described_class.logger.filter = lambda do |log|
-      [
-        /.*/,
-        /upserting/,
-        /checking/,
-        /unsaved sub part/
-        # /external_id:/,
-        # /items at/,
-      ].any? { |matcher| log.message =~ matcher }
-    end
-  end
-
   context 'simple data processing' do
     before do
       lazier_data.each_slice(2) do |items|
