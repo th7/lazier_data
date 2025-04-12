@@ -16,6 +16,10 @@ class LazierData
       end
     end
 
+    def [](key)
+      @store[key][ITEMS_KEY]
+    end
+
     private
 
     def new_layer

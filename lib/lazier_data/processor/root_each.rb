@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LazierData
   class Processor
     class RootEach
@@ -26,7 +28,7 @@ class LazierData
       def build_output_yielders(item_store)
         output_path_parts.map do |output_path_part|
           ::Enumerator::Yielder.new do |item|
-            item_store.dig(output_path_part) << item
+            item_store[output_path_part] << item
           end
         end
       end

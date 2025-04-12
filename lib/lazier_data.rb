@@ -45,17 +45,7 @@ class LazierData
     end
 
     parent.add do |upstream|
-      Enumerator.new do |downstream|
-        if my_path.empty? && batch_size.nil?
-          Processor::RootEach.new(upstream, downstream, &block).call
-        elsif my_path.empty? && !batch_size.nil?
-          Processor::RootEachSlice.new(upstream, downstream, batch_size, &block).call
-        elsif !my_path.empty? && batch_size.nil?
-          Processor::ChildEach.new(upstream, downstream, my_path, &block).call
-        else
-          Processor::ChildEachSlice.new(upstream, downstream, batch_size, my_path, &block).call
-        end
-      end
+      build_processor(upstream, batch_size, &block)
     end
   end
 
@@ -117,6 +107,32 @@ class LazierData
       inputs.each do |item|
         y << [item, ItemStore.new]
       end
+    end
+  end
+
+  def build_processor(upstream, batch_size, &)
+    Enumerator.new do |downstream|
+      if batch_size.nil?
+        build_each_processor(upstream, downstream, &)
+      else
+        build_each_slice_processor(upstream, downstream, batch_size, &)
+      end
+    end
+  end
+
+  def build_each_processor(upstream, downstream, &)
+    if my_path.empty?
+      Processor::RootEach.new(upstream, downstream, &).call
+    else
+      Processor::ChildEach.new(upstream, downstream, my_path, &).call
+    end
+  end
+
+  def build_each_slice_processor(upstream, downstream, batch_size, &)
+    if my_path.empty?
+      Processor::RootEachSlice.new(upstream, downstream, batch_size, &).call
+    else
+      Processor::ChildEachSlice.new(upstream, downstream, batch_size, my_path, &).call
     end
   end
 

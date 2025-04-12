@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class LazierData
   class Processor
     class RootEachSlice
@@ -23,7 +25,7 @@ class LazierData
 
       attr_reader :upstream, :downstream, :batch_size, :block
 
-      def slicer # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/PerceivedComplexity
+      def slicer
         Enumerator.new do |slicer|
           upstream.each do |root_item, item_store|
             output_yielders = build_output_yielders(item_store)
@@ -41,7 +43,7 @@ class LazierData
         output_path_parts.map do |output_path_part|
           ::Enumerator::Yielder.new do |item|
             logger.debug { "storing item at #{storage_path}: #{item.inspect}" }
-            item_store.dig(output_path_part) << item
+            item_store[output_path_part] << item
           end
         end
       end
